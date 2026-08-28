@@ -178,8 +178,8 @@
       text-align: center;
     }
 
-    /* Custom File Upload Button */
-    .file-upload-btn {
+    /* Action Buttons */
+    .file-upload-btn, .file-download-btn {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
@@ -190,11 +190,12 @@
       font-size: 0.85rem;
       font-weight: 500;
       color: var(--text);
+      text-decoration: none;
       cursor: pointer;
       transition: background 0.15s ease;
     }
 
-    .file-upload-btn:hover {
+    .file-upload-btn:hover, .file-download-btn:hover {
       background: #f8fafc;
     }
 
@@ -468,7 +469,7 @@
       height: 72px !important;
     }
 
-    /* Super Compact Mode */
+    /* Super Compact Mode: Reduced gaps & dynamic row height */
     .timeline-wrapper.view-super-compact .pm-track-cell {
       gap: 3px;
       padding: 4px 0;
@@ -663,10 +664,17 @@
     }
 
     .empty-state {
-      padding: 3rem;
+      padding: 3.5rem 1.5rem;
       text-align: center;
       color: var(--text-muted);
       width: 100%;
+      line-height: 1.6;
+    }
+
+    .empty-state a {
+      color: #2563eb;
+      text-decoration: underline;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -676,7 +684,7 @@
     <div>
       <h2 style="font-size: 1.25rem;">Technical Project Manager Dashboard</h2>
       <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
-        Embedded Project Register active. You can also upload a CSV / JSON file.
+        Upload a project register CSV / JSON file or download the sample template.
       </p>
     </div>
 
@@ -723,8 +731,8 @@
       <div class="select-wrapper">
         <label for="displayModeSelect">View:</label>
         <select id="displayModeSelect" class="custom-select">
-          <option value="compact" selected>Compact</option>
-          <option value="super-compact">Super Compact</option>
+          <option value="super-compact" selected>Super Compact</option>
+          <option value="compact">Compact</option>
           <option value="full">Full Info</option>
         </select>
       </div>
@@ -745,6 +753,10 @@
         <button class="btn" id="zoomResetBtn" disabled title="Reset Zoom">Fit</button>
       </div>
 
+      <a href="https://johnnyyuen.github.io/ProjectManagerDashboard/ProjectListing.json" download="ProjectListing.json" target="_blank" class="file-download-btn" title="Download sample JSON dataset">
+        📥 <span>Sample JSON</span>
+      </a>
+
       <label class="file-upload-btn" for="fileInput">
         📁 <span id="uploadBtnText">Upload CSV / JSON</span>
       </label>
@@ -752,7 +764,7 @@
     </div>
   </div>
 
-  <div class="timeline-wrapper view-compact" id="chartViewport">
+  <div class="timeline-wrapper view-super-compact" id="chartViewport">
     <div class="chart-canvas" id="chartCanvas">
       
       <div class="header-row">
@@ -767,15 +779,16 @@
       </div>
 
       <div id="unifiedRowsLayer">
-        <div class="empty-state">Loading schedule...</div>
+        <div class="empty-state">
+          No projects loaded. Upload a CSV or JSON file to generate the schedule, or 
+          <a href="https://johnnyyuen.github.io/ProjectManagerDashboard/ProjectListing.json" download="ProjectListing.json" target="_blank">download the sample JSON dataset</a>.
+        </div>
       </div>
 
     </div>
   </div>
 
-  <script type="text/csv" id="embeddedCsvData">
-Project Manager,Project Name,Start Date,End/Due Date,RAG Status,URL,Size,
-  </script>
+  <script type="text/csv" id="embeddedCsvData"></script>
 
   <script>
     const colorPalette = [
@@ -885,6 +898,7 @@ Project Manager,Project Name,Start Date,End/Due Date,RAG Status,URL,Size,
       return 'S';
     }
 
+    // Normalizes status to GREEN, AMBER, RED, COMPLETED, TODO, BLOCKED; unknown maps to TODO (Grey)
     function getNormalizedRAG(ragStr) {
       const clean = String(ragStr || '').toUpperCase().trim();
       if (clean.includes('GREEN')) return 'GREEN';
@@ -958,6 +972,7 @@ Project Manager,Project Name,Start Date,End/Due Date,RAG Status,URL,Size,
     }
 
     async function autoLoadDefaultData() {
+      // 1. Check embedded content first
       const embeddedScript = document.getElementById('embeddedCsvData');
       if (embeddedScript && embeddedScript.textContent.trim().length > 20) {
         const rawData = parseCSVText(embeddedScript.textContent);
@@ -967,6 +982,7 @@ Project Manager,Project Name,Start Date,End/Due Date,RAG Status,URL,Size,
         }
       }
 
+      // 2. Fallback to external files if hosted on origin
       if (window.location.protocol !== 'file:') {
         try {
           let res = await fetch('./ProjectListing.json');
@@ -1441,7 +1457,6 @@ Project Manager,Project Name,Start Date,End/Due Date,RAG Status,URL,Size,
         const projects = pmMap.get(pmName);
         const pmColor = pmColorMap.get(pmName) || colorPalette[0];
 
-        // Each project gets its own row
         const lanes = arrangeInLanes(projects);
 
         // Unified Row
