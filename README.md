@@ -1,4 +1,4 @@
-# 📊 Technical Project Manager Dashboard
+# 📊 Project Dashboard
 
 A lightweight, zero-dependency, client-side Gantt-style timeline application designed for Technical Program & Project Managers. It visualizes project portfolios, delivery roadmaps, project sizing, delivery status/health, and team workloads directly in any modern web browser.
 
